@@ -1,0 +1,352 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none;
+}
+.loan-register-container {
+    max-width: 400px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #E0E7FF 0%, #F3F4F6 100%);
+    position: relative;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background: transparent;
+    position: relative;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #374151;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.back-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.header-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    font-weight: 600;
+    color: #1F2937;
+    margin: 0;
+}
+
+/* Logo Section */
+.logo-section {
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px 20px;
+}
+
+.logo-icon {
+    width: 80px;
+    height: 80px;
+    background: #3B82F6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 40px;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+/* Welcome Section */
+.welcome-section {
+    text-align: center;
+    padding: 20px;
+}
+
+.welcome-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 8px;
+}
+
+.welcome-subtitle {
+    font-size: 14px;
+    color: #6B7280;
+    margin: 0;
+}
+
+/* Form Section */
+.form-section {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.phone-input-group {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #E5E7EB;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.phone-input-group:focus-within {
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.country-code {
+    background: #F9FAFB;
+    padding: 16px;
+    font-weight: 600;
+    color: #374151;
+    border-right: 1px solid #E5E7EB;
+}
+
+.phone-input {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    color: #374151;
+}
+
+.phone-input.error {
+    border-color: #EF4444 !important;
+}
+
+.phone-input::placeholder {
+    color: #9CA3AF;
+}
+
+.error-message {
+    color: #EF4444;
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Amount Section */
+.amount-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.amount-label {
+    display: block;
+    font-size: 14px;
+    color: #6B7280;
+    margin-bottom: 8px;
+}
+
+.amount-display {
+    font-size: 32px;
+    font-weight: 700;
+    color: #3B82F6;
+}
+
+/* Notice Section */
+.notice-section {
+    background: #FEF3C7;
+    border: 1px solid #FCD34D;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+}
+
+.notice-text {
+    font-size: 12px;
+    color: #92400E;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Verification Group */
+.verification-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.verification-input {
+    flex: 1;
+    padding: 16px;
+    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    outline: none;
+    font-size: 16px;
+    transition: border-color 0.2s;
+}
+
+.verification-input:focus {
+    border-color: #3B82F6;
+}
+
+.send-code-btn {
+    padding: 16px 20px;
+    background: #3B82F6;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.send-code-btn:hover:not(:disabled) {
+    background: #2563EB;
+}
+
+.send-code-btn:disabled {
+    background: #D1D5DB;
+    cursor: not-allowed;
+}
+
+/* Submit Section */
+.submit-section {
+    margin-bottom: 20px;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Terms */
+.terms-section {
+    padding: 0 10px;
+}
+
+.terms-text {
+    font-size: 11px;
+    color: #6B7280;
+    line-height: 1.4;
+    text-align: center;
+    margin: 0;
+}
+
+/* Success Message */
+.success-message {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.success-content {
+    background: white;
+    border-radius: 16px;
+    padding: 40px 30px;
+    text-align: center;
+    max-width: 320px;
+    width: 100%;
+}
+
+.success-content i {
+    font-size: 48px;
+    color: #10B981;
+    margin-bottom: 20px;
+}
+
+.success-content h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 12px;
+}
+
+.success-content p {
+    color: #6B7280;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.back-home-btn {
+    width: 100%;
+    padding: 14px;
+    background: #3B82F6;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.back-home-btn:hover {
+    background: #2563EB;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+    .loan-register-container {
+        max-width: 500px;
+        margin: 40px auto;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+}
+
+@media (min-width: 1024px) {
+    .loan-register-container {
+        max-width: 600px;
+    }
+
+    .welcome-title {
+        font-size: 32px;
+    }
+
+    .amount-display {
+        font-size: 36px;
+    }
+}
