@@ -104,7 +104,7 @@
                     <input
                         type="text"
                         wire:model.live.debounce.300ms="search"
-                        placeholder="搜尋手機號碼或申請編號..."
+                        placeholder="搜尋姓名、手機號碼、職業、城市或申請編號..."
                         class="search-input"
                     >
                 </div>
@@ -119,6 +119,17 @@
                     <option value="processing">處理中</option>
                     <option value="approved">已核准</option>
                     <option value="rejected">已拒絕</option>
+                </select>
+            </div>
+
+            <!-- City Filter -->
+            <div class="filter-group">
+                <label class="filter-label">縣市</label>
+                <select wire:model.live="cityFilter" class="filter-select">
+                    <option value="all">全部縣市</option>
+                    @foreach($cityOptions as $city)
+                        <option value="{{ $city }}">{{ $city }}</option>
+                    @endforeach
                 </select>
             </div>
 
@@ -164,8 +175,18 @@
                             </button>
                         </th>
                         <th>
+                            <button wire:click="sortBy('name')" class="sort-button">
+                                申請人資料
+                                @if($sortField === 'name')
+                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                                @else
+                                    <i class="fas fa-sort"></i>
+                                @endif
+                            </button>
+                        </th>
+                        <th>
                             <button wire:click="sortBy('phone')" class="sort-button">
-                                手機號碼
+                                聯絡資訊
                                 @if($sortField === 'phone')
                                     <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                 @else
@@ -214,9 +235,32 @@
                                     #{{ str_pad($application->id, 6, '0', STR_PAD_LEFT) }}
                                 </span>
                             </td>
-                            <td class="cell-phone">
-                                <div class="phone-info">
-                                    <span class="phone-number">{{ $application->formatted_phone }}</span>
+                            <td class="cell-applicant">
+                                <div class="applicant-info">
+                                    <div class="applicant-name">{{ $application->name }}</div>
+                                    <div class="applicant-details">
+                                        <small class="text-muted">
+                                            {{ $application->occupation }} | {{ $application->city }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="cell-contact">
+                                <div class="contact-info">
+                                    <div class="phone-number">
+                                        <i class="fas fa-phone"></i>
+                                        {{ $application->formatted_phone }}
+                                    </div>
+                                    @if($application->line_id)
+                                        <div class="line-id">
+                                            <i class="fab fa-line"></i>
+                                            {{ $application->line_id }}
+                                        </div>
+                                    @endif
+                                    <div class="contact-time">
+                                        <i class="fas fa-clock"></i>
+                                        <small class="text-muted">{{ $application->contact_time }}</small>
+                                    </div>
                                 </div>
                             </td>
                             <td class="cell-amount">
@@ -224,6 +268,7 @@
                             </td>
                             <td class="cell-status">
                                 <span class="status-badge status-{{ $application->status }}">
+                                    <i class="{{ $application->status_icon }}"></i>
                                     {{ $application->status_name }}
                                 </span>
                             </td>
@@ -231,10 +276,20 @@
                                 <div class="date-info">
                                     <span class="date-primary">{{ $application->applied_at->format('Y/m/d') }}</span>
                                     <span class="date-secondary">{{ $application->applied_at->format('H:i') }}</span>
+                                    <span class="date-diff">{{ $application->applied_at_diff }}</span>
                                 </div>
                             </td>
                             <td class="cell-actions">
                                 <div class="action-buttons">
+                                    <!-- View Detail Button -->
+                                    <button
+                                        wire:click="showDetail({{ $application->id }})"
+                                        class="btn btn-sm btn-info"
+                                        title="查看詳細資料"
+                                    >
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+
                                     <!-- Status Update Dropdown -->
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-outline dropdown-toggle">
@@ -266,6 +321,7 @@
                                         wire:click="deleteApplication({{ $application->id }})"
                                         onclick="return confirm('確定要刪除此申請嗎？')"
                                         class="btn btn-sm btn-danger"
+                                        title="刪除申請"
                                     >
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -274,7 +330,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="empty-state">
+                            <td colspan="7" class="empty-state">
                                 <div class="empty-content">
                                     <i class="fas fa-inbox"></i>
                                     <h3>沒有找到申請資料</h3>
@@ -293,6 +349,100 @@
         </div>
     </div>
 
+    <!-- Application Detail Modal -->
+    @if($showingDetail)
+        <div class="modal-overlay" wire:click="closeDetail">
+            <div class="modal-content" wire:click.stop>
+                <div class="modal-header">
+                    <h2>申請詳細資料</h2>
+                    <button wire:click="closeDetail" class="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @if($selectedApplication)
+                        <div class="detail-grid">
+                            <div class="detail-section">
+                                <h3>基本資料</h3>
+                                <div class="detail-item">
+                                    <label>申請編號:</label>
+                                    <span>#{{ str_pad($selectedApplication->id, 6, '0', STR_PAD_LEFT) }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>姓名:</label>
+                                    <span>{{ $selectedApplication->name }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>手機號碼:</label>
+                                    <span>{{ $selectedApplication->formatted_phone }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>職業:</label>
+                                    <span>{{ $selectedApplication->occupation }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>居住縣市:</label>
+                                    <span>{{ $selectedApplication->city }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>方便聯繫時間:</label>
+                                    <span>{{ $selectedApplication->contact_time }}</span>
+                                </div>
+                                @if($selectedApplication->line_id)
+                                    <div class="detail-item">
+                                        <label>Line ID:</label>
+                                        <span>{{ $selectedApplication->line_id }}</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="detail-section">
+                                <h3>申請資料</h3>
+                                <div class="detail-item">
+                                    <label>申請金額:</label>
+                                    <span class="amount-highlight">${{ number_format($selectedApplication->amount, 0) }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>申請狀態:</label>
+                                    <span class="status-badge status-{{ $selectedApplication->status }}">
+                                        <i class="{{ $selectedApplication->status_icon }}"></i>
+                                        {{ $selectedApplication->status_name }}
+                                    </span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>申請時間:</label>
+                                    <span>{{ $selectedApplication->formatted_applied_at }}</span>
+                                </div>
+                                @if($selectedApplication->notes)
+                                    <div class="detail-item">
+                                        <label>備註:</label>
+                                        <span>{{ $selectedApplication->notes }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions in Modal -->
+                        <div class="modal-actions">
+                            <button wire:click="updateStatus({{ $selectedApplication->id }}, 'approved')"
+                                    class="btn btn-success">
+                                <i class="fas fa-check"></i> 核准
+                            </button>
+                            <button wire:click="updateStatus({{ $selectedApplication->id }}, 'rejected')"
+                                    class="btn btn-danger">
+                                <i class="fas fa-times"></i> 拒絕
+                            </button>
+                            <button wire:click="updateStatus({{ $selectedApplication->id }}, 'processing')"
+                                    class="btn btn-info">
+                                <i class="fas fa-spinner"></i> 處理中
+                            </button>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Loading Overlay -->
     <div wire:loading class="loading-overlay">
         <div class="loading-content">
@@ -300,4 +450,162 @@
             <span>載入中...</span>
         </div>
     </div>
+    <style>
+/* 新增的樣式 */
+.applicant-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.applicant-name {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.applicant-details {
+    font-size: 12px;
+}
+
+.contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.contact-info > div {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.contact-info i {
+    width: 12px;
+    color: #6c757d;
+}
+
+.phone-number {
+    font-weight: 500;
+}
+
+.line-id {
+    color: #00c300;
+}
+
+.contact-time {
+    color: #6c757d;
+}
+
+.date-diff {
+    font-size: 11px;
+    color: #6c757d;
+    display: block;
+}
+
+.status-badge i {
+    margin-right: 4px;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.detail-section h3 {
+    margin-bottom: 16px;
+    color: #2c3e50;
+    font-size: 16px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 8px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.detail-item label {
+    font-weight: 500;
+    color: #495057;
+    margin: 0;
+}
+
+.detail-item span {
+    color: #2c3e50;
+}
+
+.amount-highlight {
+    font-size: 18px;
+    font-weight: 600;
+    color: #28a745;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+@media (max-width: 768px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+}
+</style>
 </div>
+

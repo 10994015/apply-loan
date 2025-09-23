@@ -109,7 +109,7 @@
         <!-- Warning Notice -->
         <div class="warning-notice">
             <i class="fas fa-lock"></i>
-            <a href="https://line.me/ti/p/sxmWNW-UtV">如未收到簡訊，請聯繫LINE專員</a>
+            <a href="https://line.me/ti/p/sxmWNW-UtV">如需詳細說明，請聯繫LINE專員</a>
         </div>
 
         <!-- Service Cards -->
@@ -358,7 +358,7 @@
         </div>
 
         <!-- Bottom Navigation -->
-        <div class="bottom-nav">
+        {{-- <div class="bottom-nav">
             <div class="nav-item active">
                 <i class="fas fa-search"></i>
                 <span>貸款</span>
@@ -375,7 +375,7 @@
                 <i class="fas fa-cog"></i>
                 <span>資質</span>
             </div>
-        </div>
+        </div> --}}
     </div>
 
     <script>

@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('loan_applications', function (Blueprint $table) {
             $table->id();
+            $table->string('name', 50)->index(); // 姓名
             $table->string('phone', 20)->index(); // 手機號碼
+            $table->string('occupation', 100); // 職業
+            $table->string('city', 50); // 居住縣市
+            $table->string('contact_time', 100); // 方便聯繫時間
+            $table->string('line_id', 50)->nullable(); // Line ID (可選填)
             $table->decimal('amount', 10, 2); // 貸款金額
             $table->enum('status', ['pending', 'approved', 'rejected', 'processing'])
                   ->default('pending'); // 申請狀態

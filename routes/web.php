@@ -47,3 +47,7 @@ Route::middleware([
     });
 
 });
+
+Route::get('/register', function () {
+    abort(404);
+});
