@@ -45,6 +45,8 @@ class InputDataComponent extends Component
     public $line_id = '';
 
     #[Url(as: 'amount')]
+    public $amountUrl = 20000;
+
     public $amount = 20000;
 
     // 步驟2：緊急聯絡人
@@ -94,7 +96,7 @@ class InputDataComponent extends Component
         $defaultAmount = LoanSetting::getValue('loan_default_amount', 20000);
 
 
-
+        $this->amount = $this->amountUrl;
         // 驗證金額在允許範圍內
         if ($this->amount < $minAmount) {
             $this->amount = $minAmount;
@@ -587,14 +589,14 @@ class InputDataComponent extends Component
     private function resetComponentPropertiesForNewApplication()
     {
         // 重置基本資料
-        $this->name = '';
+        // $this->name = '';
         $this->phone = '';
         $this->occupation = '';
         $this->city = '';
         $this->address = '';
         $this->contact_time = '';
         $this->line_id = '';
-        $this->amount = LoanSetting::getValue('loan_default_amount', 20000); // 使用動態預設值
+        // $this->amount = LoanSetting::getValue('loan_default_amount', 20000); // 使用動態預設值
 
         // 重置緊急聯絡人
         $this->emergency_contact_1_name = '';
@@ -682,7 +684,7 @@ class InputDataComponent extends Component
             $this->bank_card = null;
 
             // 4. 重置金額為從資料庫取得的預設值
-            $this->amount = LoanSetting::getValue('loan_default_amount', 20000);
+            // $this->amount = LoanSetting::getValue('loan_default_amount', 20000);
 
             // 5. 清除驗證錯誤
             $this->resetErrorBag();
