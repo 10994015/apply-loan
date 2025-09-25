@@ -11,22 +11,63 @@ class LoanApplication extends Model
     use HasFactory;
 
     protected $fillable = [
+        // 基本資料
         'name',
         'phone',
         'occupation',
         'city',
+        'address', // 新增
         'contact_time',
         'line_id',
         'amount',
-        'status',
         'country_code',
+        'status',
         'notes',
         'applied_at',
+
+        // 多步驟相關欄位
+        'current_step',
+        'step_1_completed',
+        'step_1_completed_at',
+        'step_2_completed',
+        'step_2_completed_at',
+        'step_3_completed',
+        'step_3_completed_at',
+        'step_4_completed',
+        'step_4_completed_at',
+        'step_5_completed',
+        'step_5_completed_at',
+
+        // 緊急聯絡人資料
+        'emergency_contact_1_name',
+        'emergency_contact_1_phone',
+        'emergency_contact_1_relationship',
+        'emergency_contact_2_name',
+        'emergency_contact_2_phone',
+        'emergency_contact_2_relationship',
+
+        // 證件檔案路徑
+        'id_card_front_path',
+        'id_card_back_path',
+        'id_card_selfie_path',
+        'second_document_path',
+        'bank_card_path',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'applied_at' => 'datetime',
+        'step_1_completed_at' => 'datetime',
+        'step_2_completed_at' => 'datetime',
+        'step_3_completed_at' => 'datetime',
+        'step_4_completed_at' => 'datetime',
+        'step_5_completed_at' => 'datetime',
+        'step_1_completed' => 'boolean',
+        'step_2_completed' => 'boolean',
+        'step_3_completed' => 'boolean',
+        'step_4_completed' => 'boolean',
+        'step_5_completed' => 'boolean',
+        'current_step' => 'integer',
     ];
 
     // 狀態常數
@@ -49,6 +90,14 @@ class LoanApplication extends Model
     public function getFormattedAmountAttribute()
     {
         return '$' . number_format($this->amount, 0);
+    }
+
+    /**
+     * 獲取完整地址
+     */
+    public function getFullAddressAttribute()
+    {
+        return $this->city . ' ' . $this->address;
     }
 
     /**
@@ -94,6 +143,23 @@ class LoanApplication extends Model
     }
 
     /**
+     * 獲取申請進度百分比
+     */
+    public function getProgressPercentageAttribute()
+    {
+        if (!$this->current_step) return 0;
+        return ($this->current_step / 5) * 100;
+    }
+
+    /**
+     * 檢查是否完成所有步驟
+     */
+    public function getIsCompletedAttribute()
+    {
+        return $this->step_5_completed;
+    }
+
+    /**
      * 格式化申請時間
      */
     public function getFormattedAppliedAtAttribute()
@@ -126,7 +192,7 @@ class LoanApplication extends Model
             '姓名: ' . $this->name,
             '電話: ' . $this->formatted_phone,
             '職業: ' . $this->occupation,
-            '縣市: ' . $this->city,
+            '地址: ' . $this->full_address,
             '聯繫時間: ' . $this->contact_time,
         ];
 
@@ -135,6 +201,43 @@ class LoanApplication extends Model
         }
 
         return implode("\n", $info);
+    }
+
+    /**
+     * 獲取緊急聯絡人資訊
+     */
+    public function getEmergencyContactsAttribute()
+    {
+        $contacts = [];
+
+        if ($this->emergency_contact_1_name) {
+            $contacts[] = [
+                'name' => $this->emergency_contact_1_name,
+                'phone' => $this->emergency_contact_1_phone,
+                'relationship' => $this->emergency_contact_1_relationship,
+            ];
+        }
+
+        if ($this->emergency_contact_2_name) {
+            $contacts[] = [
+                'name' => $this->emergency_contact_2_name,
+                'phone' => $this->emergency_contact_2_phone,
+                'relationship' => $this->emergency_contact_2_relationship,
+            ];
+        }
+
+        return $contacts;
+    }
+
+    /**
+     * 檢查是否有上傳的文件
+     */
+    public function getHasDocumentsAttribute()
+    {
+        return $this->id_card_front_path &&
+               $this->id_card_back_path &&
+               $this->id_card_selfie_path &&
+               $this->second_document_path;
     }
 
     /**
@@ -276,6 +379,7 @@ class LoanApplication extends Model
                   ->orWhere('phone', 'like', '%' . $search . '%')
                   ->orWhere('occupation', 'like', '%' . $search . '%')
                   ->orWhere('city', 'like', '%' . $search . '%')
+                  ->orWhere('address', 'like', '%' . $search . '%')
                   ->orWhere('line_id', 'like', '%' . $search . '%')
                   ->orWhere('id', 'like', '%' . $search . '%');
             });

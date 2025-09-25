@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     @livewireStyles
+    @stack('styles')
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -22,6 +23,12 @@
                     <i class="fas fa-file-alt"></i>
                     <span>貸款申請</span>
                 </a>
+                @if(false)
+                <a href="{{ route('admin.settings') }}" class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}">
+                    <i class="fas fa-cog"></i>
+                    <span>系統設定</span>
+                </a>
+                @endif
                 <a href="{{ route('loan.index') }}" class="nav-link" target="_blank">
                     <i class="fas fa-external-link-alt"></i>
                     <span>前台首頁</span>
@@ -32,7 +39,6 @@
                     <button class="user-info dropdown-toggle" onclick="toggleDropdown()">
                         <i class="fas fa-user"></i>
                         <span>{{ Auth::user()->name ?? '管理員' }}</span>
-                        <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="dropdown-menu" id="userDropdown">
                         <a href="{{ route('profile.show') }}" class="dropdown-item">
@@ -76,6 +82,27 @@
                 }
             }
         }
+
+        // Confirmation for dangerous actions
+        window.confirmAction = function(message) {
+            return confirm(message || '確定要執行此操作嗎？');
+        }
+
+        // Auto hide alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    alert.style.opacity = '0';
+                    alert.style.transform = 'translateY(-10px)';
+                    setTimeout(function() {
+                        if (alert.parentNode) {
+                            alert.parentNode.removeChild(alert);
+                        }
+                    }, 300);
+                }, 5000);
+            });
+        });
     </script>
 </body>
 
@@ -242,17 +269,44 @@
     background: #f8fafc;
 }
 
+/* Enhanced Alert Animations */
+.alert {
+    animation: slideInDown 0.3s ease-out;
+    transition: all 0.3s ease;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 968px) {
     .nav-container {
         padding: 0 12px;
     }
 
     .nav-menu {
+        gap: 4px;
+    }
+
+    .nav-link span {
         display: none;
     }
 
     .nav-brand span {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-menu {
         display: none;
     }
 
@@ -267,6 +321,23 @@
 
     .dropdown-item span {
         display: inline;
+    }
+}
+
+/* Mobile Menu Toggle (if needed later) */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 8px;
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        display: block;
     }
 }
 </style>
