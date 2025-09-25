@@ -8,6 +8,7 @@ use App\Models\LoanApplication;
 use App\Models\LoanSetting; // 添加這個 import
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Url;
 
 class InputDataComponent extends Component
 {
@@ -43,6 +44,7 @@ class InputDataComponent extends Component
     #[Validate('nullable|string|max:50')]
     public $line_id = '';
 
+    #[Url(as: 'amount')]
     public $amount = 20000;
 
     // 步驟2：緊急聯絡人
