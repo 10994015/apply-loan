@@ -86,20 +86,14 @@ class InputDataComponent extends Component
     // 申請ID（只有在最後才產生）
     public $applicationId = null;
 
-    public function mount($amount = null)
+    public function mount()
     {
         // 從資料庫載入金額設定
         $minAmount = LoanSetting::getValue('loan_min_amount', 7000);
         $maxAmount = LoanSetting::getValue('loan_max_amount', 100000);
         $defaultAmount = LoanSetting::getValue('loan_default_amount', 20000);
 
-        // 從 URL 參數或預設值載入金額
-        if ($amount) {
-            $this->amount = (int) $amount;
-        } else {
-            // 如果沒有傳入金額，從 session 或使用預設值
-            $this->amount = session('loan_amount', $defaultAmount);
-        }
+
 
         // 驗證金額在允許範圍內
         if ($this->amount < $minAmount) {
