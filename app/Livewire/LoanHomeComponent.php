@@ -3,256 +3,111 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use App\Helpers\LoanSettingsHelper;
+use App\Models\LoanSetting;
 
 class LoanHomeComponent extends Component
 {
-    // 貸款金額
-    public $amount;
     public $minAmount;
     public $maxAmount;
     public $defaultAmount;
+    public $selectedAmount;
+    public $loanCount = 32;
 
-    // 貸款天數
-    public $days;
+    // 其他設定值
     public $minDays;
     public $maxDays;
-    public $defaultDays = 91;
-
-    // 利率資訊
     public $dailyRate;
-
-    // 計算結果
-    public $calculatedInterest;
-    public $calculatedTotal;
-
-    // UI 狀態
-    public $showCalculation = false;
 
     public function mount()
     {
-        // 從設定系統載入參數
-        $this->loadSettings();
+        // 從資料庫載入設定
+        $this->loadLoanSettings();
 
-        // 設定預設值
-        $this->amount = $this->defaultAmount;
-        $this->days = $this->defaultDays;
-
-        // 初始計算
-        $this->calculateLoan();
+        // 設定預設選擇金額
+        $this->selectedAmount = $this->defaultAmount;
     }
 
-    /**
-     * 載入系統設定
-     */
-    public function loadSettings()
+    public function loadLoanSettings()
     {
-        try {
-            // 載入金額設定
-            $amountSettings = LoanSettingsHelper::getLoanAmountSettings();
-            $this->minAmount = $amountSettings['min'];
-            $this->maxAmount = $amountSettings['max'];
-            $this->defaultAmount = $amountSettings['default'];
+        // 取得所有貸款設定
+        $config = LoanSetting::getLoanConfig();
 
-            // 載入天數設定
-            $daysSettings = LoanSettingsHelper::getLoanDaysSettings();
-            $this->minDays = $daysSettings['min'];
-            $this->maxDays = $daysSettings['max'];
-
-            // 載入利率設定
-            $rateSettings = LoanSettingsHelper::getLoanRateSettings();
-            $this->dailyRate = $rateSettings['daily_rate'];
-
-        } catch (\Exception $e) {
-            // 如果無法載入設定，使用預設值
-            $this->minAmount = 7000;
-            $this->maxAmount = 100000;
-            $this->defaultAmount = 20000;
-            $this->minDays = 91;
-            $this->maxDays = 365;
-            $this->dailyRate = 0.03;
-
-            \Log::warning('Failed to load loan settings, using defaults', [
-                'error' => $e->getMessage()
-            ]);
-        }
+        $this->minAmount = $config['loan_min_amount'] ?? 7000;
+        $this->maxAmount = $config['loan_max_amount'] ?? 100000;
+        $this->defaultAmount = $config['loan_default_amount'] ?? 20000;
+        $this->minDays = $config['loan_min_days'] ?? 91;
+        $this->maxDays = $config['loan_max_days'] ?? 365;
+        $this->dailyRate = $config['loan_daily_rate'] ?? 0.03;
     }
 
-    /**
-     * 更新金額時的處理
-     */
-    public function updatedAmount($value)
+    public function updatedSelectedAmount($value)
     {
-        // 驗證金額範圍
+        // 確保金額在允許範圍內
         if ($value < $this->minAmount) {
-            $this->amount = $this->minAmount;
+            $this->selectedAmount = $this->minAmount;
         } elseif ($value > $this->maxAmount) {
-            $this->amount = $this->maxAmount;
-        }
-
-        $this->calculateLoan();
-    }
-
-    /**
-     * 更新天數時的處理
-     */
-    public function updatedDays($value)
-    {
-        // 驗證天數範圍
-        if ($value < $this->minDays) {
-            $this->days = $this->minDays;
-        } elseif ($value > $this->maxDays) {
-            $this->days = $this->maxDays;
-        }
-
-        $this->calculateLoan();
-    }
-
-    /**
-     * 計算貸款
-     */
-    public function calculateLoan()
-    {
-        try {
-            $result = LoanSettingsHelper::calculateInterest($this->amount, $this->days);
-
-            $this->calculatedInterest = $result['interest'];
-            $this->calculatedTotal = $result['total'];
-            $this->showCalculation = true;
-
-        } catch (\Exception $e) {
-            // 簡單計算作為後備方案
-            $dailyRate = $this->dailyRate / 100;
-            $this->calculatedInterest = round($this->amount * $dailyRate * $this->days, 2);
-            $this->calculatedTotal = $this->amount + $this->calculatedInterest;
-            $this->showCalculation = true;
-
-            \Log::warning('Failed to calculate loan using helper, using simple calculation', [
-                'error' => $e->getMessage()
-            ]);
+            $this->selectedAmount = $this->maxAmount;
         }
     }
 
-    /**
-     * 設定常用金額
-     */
-    public function setQuickAmount($amount)
+    public function applyLoan()
     {
-        // 驗證金額是否在範圍內
-        $validation = LoanSettingsHelper::validateLoanAmount($amount);
+        // 重定向到申請頁面，並傳遞選擇的金額
+        return redirect()->route('loan.apply', ['amount' => $this->selectedAmount]);
+    }
 
-        if ($validation['valid']) {
-            $this->amount = $amount;
-            $this->calculateLoan();
+    public function getAmountRangeDisplay()
+    {
+        return '$' . number_format($this->minAmount) . '~' . number_format($this->maxAmount);
+    }
+
+    public function getLoanPeriodDisplay()
+    {
+        return $this->minDays . '-' . $this->maxDays . '天';
+    }
+
+    public function getDailyRateDisplay()
+    {
+        return number_format($this->dailyRate, 2) . '%/天';
+    }
+
+    public function calculateLoanCount()
+    {
+        $now = new \DateTime();
+        $hours = (int)$now->format('H');
+        $minutes = (int)$now->format('i');
+
+        // 基數：32人（上午9點的基數）
+        $baseCount = 32;
+
+        // 計算從上午9點開始到現在的總分鐘數
+        $minutesFromStart = 0;
+
+        if ($hours >= 9) {
+            $minutesFromStart = ($hours - 9) * 60 + $minutes;
         } else {
-            session()->flash('error', $validation['message']);
-        }
-    }
-
-    /**
-     * 重置為預設值
-     */
-    public function resetToDefaults()
-    {
-        $this->amount = $this->defaultAmount;
-        $this->days = $this->defaultDays;
-        $this->calculateLoan();
-
-        session()->flash('message', '已重置為預設值');
-    }
-
-    /**
-     * 前往申請頁面
-     */
-    public function goToApplication()
-    {
-        // 最終驗證
-        $amountValidation = LoanSettingsHelper::validateLoanAmount($this->amount);
-        $daysValidation = LoanSettingsHelper::validateLoanDays($this->days);
-
-        if (!$amountValidation['valid']) {
-            session()->flash('error', $amountValidation['message']);
-            return;
+            // 如果是早上9點前，顯示前一天最終數據
+            $minutesFromStart = 0;
+            $baseCount = 380 + rand(0, 19); // 前一天的數據
         }
 
-        if (!$daysValidation['valid']) {
-            session()->flash('error', $daysValidation['message']);
-            return;
-        }
+        // 每小時平均增加12-18人，轉換為每分鐘0.2-0.3人
+        $incrementPerMinute = 0.2 + (mt_rand(0, 100) / 1000);
+        $totalIncrement = floor($minutesFromStart * $incrementPerMinute);
 
-        return redirect()->route('loan.apply', [
-            'amount' => $this->amount,
-            'days' => $this->days
-        ]);
+        // 加入一些隨機波動
+        $randomFactor = rand(-5, 5);
+
+        return max($baseCount + $totalIncrement + $randomFactor, $baseCount);
     }
 
-    /**
-     * 獲取金額範圍文字
-     */
-    public function getAmountRangeTextProperty()
+    public function updateLoanCount()
     {
-        return LoanSettingsHelper::getAmountRangeText();
-    }
-
-    /**
-     * 獲取天數範圍文字
-     */
-    public function getDaysRangeTextProperty()
-    {
-        return LoanSettingsHelper::getDaysRangeText();
-    }
-
-    /**
-     * 獲取常用金額選項
-     */
-    public function getQuickAmountOptionsProperty()
-    {
-        $quickAmounts = [];
-
-        // 基於設定動態生成常用金額
-        $step = ($this->maxAmount - $this->minAmount) / 6;
-
-        for ($i = 0; $i < 6; $i++) {
-            $amount = $this->minAmount + ($step * $i);
-            // 圓整到千位
-            $amount = round($amount / 1000) * 1000;
-
-            if ($amount >= $this->minAmount && $amount <= $this->maxAmount) {
-                $quickAmounts[] = $amount;
-            }
-        }
-
-        // 確保包含預設金額
-        if (!in_array($this->defaultAmount, $quickAmounts)) {
-            $quickAmounts[] = $this->defaultAmount;
-            sort($quickAmounts);
-        }
-
-        return array_unique($quickAmounts);
-    }
-
-    /**
-     * 格式化金額顯示
-     */
-    public function formatAmount($amount)
-    {
-        return number_format($amount, 0);
-    }
-
-    /**
-     * 格式化百分比顯示
-     */
-    public function formatRate($rate)
-    {
-        return number_format($rate, 2);
+        $this->loanCount = $this->calculateLoanCount();
     }
 
     public function render()
     {
-        return view('livewire.loan-home-component', [
-            'amountRangeText' => $this->getAmountRangeTextProperty(),
-            'daysRangeText' => $this->getDaysRangeTextProperty(),
-            'quickAmountOptions' => $this->getQuickAmountOptionsProperty(),
-        ]);
+        return view('livewire.loan-home-component')->layout('layouts.app');
     }
 }
