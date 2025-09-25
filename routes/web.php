@@ -56,6 +56,6 @@ Route::middleware([
 });
 
 // 禁用註冊頁面
-// Route::get('/register', function () {
-//     abort(404);
-// });
+Route::get('/register', function () {
+    abort(404);
+});
