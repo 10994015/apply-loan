@@ -344,13 +344,16 @@ class InputDataComponent extends Component
 
         // 檢查兩個緊急聯絡人不能是同一個人
         if ($this->emergency_contact_1_phone == $this->emergency_contact_2_phone) {
+            $this->addError('emergency_contact_1_phone', '兩位緊急聯絡人不能是同一人');
             throw new \Exception('兩位緊急聯絡人不能是同一人');
         }
 
         // 檢查緊急聯絡人手機不能和申請人相同
         if ($this->emergency_contact_1_phone == $this->phone || $this->emergency_contact_2_phone == $this->phone) {
-            throw new \Exception('緊急聯絡人手機號碼不能與申請人相同');
+            $this->addError('emergency_contact_2_phone', '建議緊急聯絡人使用不同的手機號碼');
+            throw new \Exception('建議緊急聯絡人使用不同的手機號碼');
         }
+
     }
 
     /**
