@@ -110,10 +110,28 @@
 
             <!-- Apply Section for Desktop -->
             <div class="apply-section">
+                <!-- 錯誤提示訊息 -->
+                @if($showError && $errorMessage)
+                    <div class="error-alert" id="errorAlert">
+                        <div class="error-content">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>{{ $errorMessage }}</span>
+                        </div>
+                        <button wire:click="$set('showError', false)" class="error-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                @endif
+
                 <!-- Apply Button -->
                 <div class="apply-button-container">
-                    <button class="apply-btn" wire:click="applyLoan">
-                        申請貸款 (24小時服務)
+                    <button class="apply-btn" wire:click="applyLoan" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="applyLoan">
+                            申請貸款 (24小時服務)
+                        </span>
+                        <span wire:loading wire:target="applyLoan">
+                            <i class="fas fa-spinner fa-spin"></i> 處理中...
+                        </span>
                     </button>
                 </div>
 
@@ -374,226 +392,379 @@
             50% { opacity: 0.7; }
         }
 
-        /* 載入CSS檔案或重複原有樣式 */
-        @import url('{{ asset("css/loan.css") }}');
+        /* 金額輸入區塊樣式 */
         .amount-input-group {
-    margin-bottom: 20px;
-    padding: 20px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 12px;
-    border: 2px solid #dee2e6;
-}
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            border: 2px solid #dee2e6;
+        }
 
-.amount-label {
-    display: block;
-    font-size: 15px;
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 12px;
-}
+        .amount-label {
+            display: block;
+            font-size: 15px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 12px;
+        }
 
-.amount-input-wrapper {
-    display: flex;
-    align-items: center;
-    background: white;
-    border: 2px solid #ddd;
-    border-radius: 10px;
-    padding: 4px 16px;
-    transition: all 0.3s ease;
-    position: relative;
-}
+        .amount-input-wrapper {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 4px 16px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
 
-.amount-input-wrapper:focus-within {
-    border-color: #667eea;
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-}
+        .amount-input-wrapper:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
 
-.currency-symbol {
-    font-size: 20px;
-    font-weight: 700;
-    color: #667eea;
-    margin-right: 8px;
-}
+        .currency-symbol {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+            margin-right: 8px;
+        }
 
-.amount-input {
-    flex: 1;
-    border: none;
-    outline: none;
-    font-size: 24px;
-    font-weight: 700;
-    color: #2c3e50;
-    padding: 12px 8px;
-    text-align: center;
-    min-width: 0;
-}
+        .amount-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            padding: 12px 8px;
+            text-align: center;
+            min-width: 0;
+        }
 
-.amount-input::placeholder {
-    color: #adb5bd;
-    font-weight: 400;
-}
+        .amount-input::placeholder {
+            color: #adb5bd;
+            font-weight: 400;
+        }
 
-.amount-unit {
-    font-size: 16px;
-    font-weight: 600;
-    color: #6c757d;
-    margin-left: 8px;
-}
+        .amount-unit {
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            margin-left: 8px;
+        }
 
-.amount-hint {
-    margin-top: 8px;
-    font-size: 13px;
-    color: #6c757d;
-    text-align: center;
-}
+        .amount-hint {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #6c757d;
+            text-align: center;
+        }
 
-/* 錯誤狀態 */
-.amount-input-wrapper.error {
-    border-color: #dc3545;
-    animation: shake 0.3s ease-in-out;
-}
+        /* 錯誤狀態 */
+        .amount-input-wrapper.error {
+            border-color: #dc3545;
+            animation: shake 0.3s ease-in-out;
+        }
 
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
-}
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
 
-/* 滑桿樣式增強 */
-.slider-container {
-    margin: 24px 0;
-    padding: 0 10px;
-}
+        /* 滑桿樣式增強 */
+        .slider-container {
+            margin: 24px 0;
+            padding: 0 10px;
+        }
 
-.slider {
-    width: 100%;
-    height: 8px;
-    border-radius: 5px;
-    background: linear-gradient(to right, #e9ecef 0%, #667eea 100%);
-    outline: none;
-    -webkit-appearance: none;
-}
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: linear-gradient(to right, #e9ecef 0%, #667eea 100%);
+            outline: none;
+            -webkit-appearance: none;
+        }
 
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    transition: all 0.3s ease;
-}
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
 
-.slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-}
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
 
-.slider::-webkit-slider-thumb:active {
-    transform: scale(1.05);
-}
+        .slider::-webkit-slider-thumb:active {
+            transform: scale(1.05);
+        }
 
-.slider::-moz-range-thumb {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    transition: all 0.3s ease;
-}
+        .slider::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
 
-.slider::-moz-range-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-}
+        .slider::-moz-range-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
 
-/* 響應式設計 */
-@media (max-width: 768px) {
-    .amount-input {
-        font-size: 20px;
-    }
+        /* 錯誤提示樣式 */
+        .error-alert {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideDown 0.3s ease-out, errorShake 0.5s ease-in-out;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
 
-    .currency-symbol {
-        font-size: 18px;
-    }
+        .error-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
 
-    .amount-unit {
-        font-size: 14px;
-    }
+        .error-content i {
+            font-size: 24px;
+            color: #dc2626;
+        }
 
-    .amount-input-group {
-        padding: 16px;
-    }
-}
-    </style>
+        .error-content span {
+            color: #991b1b;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.5;
+        }
 
-  <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const amountInput = document.getElementById('amountInput');
-    const slider = document.getElementById('loanSlider');
+        .error-close {
+            background: none;
+            border: none;
+            color: #dc2626;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+        }
 
-    if (amountInput) {
-        // 格式化輸入的金額（加上千分位）
-        amountInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/,/g, '');
+        .error-close:hover {
+            background: rgba(220, 38, 38, 0.1);
+            transform: scale(1.1);
+        }
 
-            // 只允許數字
-            value = value.replace(/[^\d]/g, '');
+        .error-close:active {
+            transform: scale(0.95);
+        }
 
-            if (value) {
-                // 加上千分位
-                e.target.value = parseInt(value).toLocaleString();
+        /* 動畫效果 */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
             }
-        });
-
-        // 當焦點離開時驗證金額
-        amountInput.addEventListener('blur', function(e) {
-            let value = e.target.value.replace(/,/g, '');
-            let numValue = parseInt(value);
-
-            const minAmount = parseInt('{{ $minAmount }}');
-            const maxAmount = parseInt('{{ $maxAmount }}');
-            const wrapper = e.target.closest('.amount-input-wrapper');
-
-            if (isNaN(numValue) || numValue < minAmount) {
-                numValue = minAmount;
-                wrapper.classList.add('error');
-                setTimeout(() => wrapper.classList.remove('error'), 500);
-            } else if (numValue > maxAmount) {
-                numValue = maxAmount;
-                wrapper.classList.add('error');
-                setTimeout(() => wrapper.classList.remove('error'), 500);
-            }
-
-            // 調整到最接近的千位數
-            numValue = Math.round(numValue / 1000) * 1000;
-
-            e.target.value = numValue.toLocaleString();
-
-            // 更新 Livewire
-            @this.set('selectedAmount', numValue);
-        });
-
-        // 當按下 Enter 時移除焦點
-        amountInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.target.blur();
-            }
-        });
-    }
-
-    // 監聽 Livewire 更新，同步更新輸入框
-    document.addEventListener('livewire:updated', function() {
-        if (amountInput) {
-            const currentAmount = @this.get('selectedAmount');
-            if (currentAmount) {
-                amountInput.value = parseInt(currentAmount).toLocaleString();
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
-    });
-});
-</script>
+
+        @keyframes errorShake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        /* 申請按鈕載入狀態 */
+        .apply-btn[disabled] {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .apply-btn[disabled]:hover {
+            transform: none;
+        }
+
+        .apply-btn {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .apply-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .apply-btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .amount-input {
+                font-size: 20px;
+            }
+
+            .currency-symbol {
+                font-size: 18px;
+            }
+
+            .amount-unit {
+                font-size: 14px;
+            }
+
+            .amount-input-group {
+                padding: 16px;
+            }
+
+            .error-alert {
+                padding: 14px 16px;
+            }
+
+            .error-content i {
+                font-size: 20px;
+            }
+
+            .error-content span {
+                font-size: 14px;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('livewire:initialized', () => {
+            // 定期更新貸款人數
+            setInterval(() => {
+                @this.updateLoanCount();
+            }, 3 * 60 * 1000 + Math.random() * 2 * 60 * 1000); // 3-5分鐘
+
+            // 頁面可見性變化時更新
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    setTimeout(() => {
+                        @this.updateLoanCount();
+                    }, 1000);
+                }
+            });
+
+            // 監聽錯誤提示事件
+            Livewire.on('show-error-toast', () => {
+                const errorAlert = document.getElementById('errorAlert');
+                if (errorAlert) {
+                    // 滾動到錯誤提示
+                    errorAlert.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+
+                    // 5秒後自動隱藏
+                    setTimeout(() => {
+                        @this.set('showError', false);
+                    }, 5000);
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const amountInput = document.getElementById('amountInput');
+            const slider = document.getElementById('loanSlider');
+
+            if (amountInput) {
+                // 格式化輸入的金額（加上千分位）
+                amountInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/,/g, '');
+
+                    // 只允許數字
+                    value = value.replace(/[^\d]/g, '');
+
+                    if (value) {
+                        // 加上千分位
+                        e.target.value = parseInt(value).toLocaleString();
+                    }
+                });
+
+                // 當焦點離開時驗證金額
+                amountInput.addEventListener('blur', function(e) {
+                    let value = e.target.value.replace(/,/g, '');
+                    let numValue = parseInt(value);
+
+                    const minAmount = parseInt('{{ $minAmount }}');
+                    const maxAmount = parseInt('{{ $maxAmount }}');
+                    const wrapper = e.target.closest('.amount-input-wrapper');
+
+                    if (isNaN(numValue) || numValue < minAmount) {
+                        numValue = minAmount;
+                        wrapper.classList.add('error');
+                        setTimeout(() => wrapper.classList.remove('error'), 500);
+                    } else if (numValue > maxAmount) {
+                        numValue = maxAmount;
+                        wrapper.classList.add('error');
+                        setTimeout(() => wrapper.classList.remove('error'), 500);
+                    }
+
+                    // 調整到最接近的千位數
+                    numValue = Math.round(numValue / 1000) * 1000;
+
+                    e.target.value = numValue.toLocaleString();
+
+                    // 更新 Livewire
+                    @this.set('selectedAmount', numValue);
+                });
+
+                // 當按下 Enter 時移除焦點
+                amountInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.target.blur();
+                    }
+                });
+            }
+
+            // 監聽 Livewire 更新，同步更新輸入框
+            document.addEventListener('livewire:updated', function() {
+                if (amountInput) {
+                    const currentAmount = @this.get('selectedAmount');
+                    if (currentAmount) {
+                        amountInput.value = parseInt(currentAmount).toLocaleString();
+                    }
+                }
+            });
+        });
+    </script>
 </div>

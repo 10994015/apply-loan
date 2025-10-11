@@ -21,6 +21,10 @@ class LoanHomeComponent extends Component
     public $maxDays;
     public $dailyRate;
 
+    // 錯誤訊息
+    public $errorMessage = '';
+    public $showError = false;
+
     public function mount()
     {
         // 從資料庫載入設定
@@ -28,6 +32,7 @@ class LoanHomeComponent extends Component
 
         // 設定預設選擇金額
         $this->selectedAmount = $this->defaultAmount;
+
         //抓取今日申請人數
         $this->loanCount = LoanApplication::whereDate('applied_at', Carbon::today())->count();
         $this->loanCount = ($this->loanCount+3)*12;
@@ -46,19 +51,100 @@ class LoanHomeComponent extends Component
         $this->dailyRate = $config['loan_daily_rate'] ?? 0.03;
     }
 
+    /**
+     * 當選擇金額更新時驗證和格式化
+     */
     public function updatedSelectedAmount($value)
     {
+        // 移除逗號和非數字字元
+        $value = preg_replace('/[^\d]/', '', $value);
+        $value = (int) $value;
+
+        // 清除之前的錯誤訊息
+        $this->showError = false;
+        $this->errorMessage = '';
+
         // 確保金額在允許範圍內
         if ($value < $this->minAmount) {
             $this->selectedAmount = $this->minAmount;
         } elseif ($value > $this->maxAmount) {
             $this->selectedAmount = $this->maxAmount;
+        } else {
+            // 調整到最接近的千位數
+            $this->selectedAmount = round($value / 1000) * 1000;
         }
     }
 
+    /**
+     * 設定金額（用於快速選擇按鈕）
+     */
+    public function setAmount($amount)
+    {
+        $this->selectedAmount = $amount;
+        $this->showError = false;
+        $this->errorMessage = '';
+    }
+
+    /**
+     * 驗證金額是否有效
+     */
+    public function validateAmount()
+    {
+        // 確保金額是數字
+        $amount = (int) $this->selectedAmount;
+
+        // 檢查是否為空或無效
+        if (empty($amount) || $amount <= 0) {
+            $this->showError = true;
+            $this->errorMessage = '請選擇申請金額';
+            $this->dispatch('show-error-toast');
+            return false;
+        }
+
+        // 檢查是否低於最小金額
+        if ($amount < $this->minAmount) {
+            $this->showError = true;
+            $this->errorMessage = "申請金額不能低於 $" . number_format($this->minAmount);
+            $this->selectedAmount = $this->minAmount;
+            $this->dispatch('show-error-toast');
+            return false;
+        }
+
+        // 檢查是否超過最大金額
+        if ($amount > $this->maxAmount) {
+            $this->showError = true;
+            $this->errorMessage = "申請金額不能超過 $" . number_format($this->maxAmount);
+            $this->selectedAmount = $this->maxAmount;
+            $this->dispatch('show-error-toast');
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * 申請貸款
+     */
     public function applyLoan()
     {
-        // 重定向到申請頁面，並傳遞選擇的金額
+        // 驗證金額
+        if (!$this->validateAmount()) {
+            // 驗證失敗，不允許進入申請頁面
+            Log::warning('Loan application blocked - Invalid amount', [
+                'selected_amount' => $this->selectedAmount,
+                'min_amount' => $this->minAmount,
+                'max_amount' => $this->maxAmount
+            ]);
+            return;
+        }
+
+        // 記錄申請
+        Log::info('User proceeding to loan application', [
+            'amount' => $this->selectedAmount,
+            'timestamp' => now()
+        ]);
+
+        // 驗證成功，重定向到申請頁面
         return redirect()->route('loan.apply', ['amount' => $this->selectedAmount]);
     }
 
@@ -109,6 +195,7 @@ class LoanHomeComponent extends Component
 
     public function updateLoanCount()
     {
+        // 可以在這裡實作更新邏輯
     }
 
     public function render()
