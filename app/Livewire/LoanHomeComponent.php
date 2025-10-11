@@ -2,8 +2,11 @@
 
 namespace App\Livewire;
 
+use App\Models\LoanApplication;
 use Livewire\Component;
 use App\Models\LoanSetting;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class LoanHomeComponent extends Component
 {
@@ -11,7 +14,7 @@ class LoanHomeComponent extends Component
     public $maxAmount;
     public $defaultAmount;
     public $selectedAmount;
-    public $loanCount = 32;
+    public $loanCount = 0;
 
     // 其他設定值
     public $minDays;
@@ -25,6 +28,9 @@ class LoanHomeComponent extends Component
 
         // 設定預設選擇金額
         $this->selectedAmount = $this->defaultAmount;
+        //抓取今日申請人數
+        $this->loanCount = LoanApplication::whereDate('applied_at', Carbon::today())->count();
+        $this->loanCount = ($this->loanCount+3)*12;
     }
 
     public function loadLoanSettings()
@@ -103,7 +109,6 @@ class LoanHomeComponent extends Component
 
     public function updateLoanCount()
     {
-        $this->loanCount = $this->calculateLoanCount();
     }
 
     public function render()
