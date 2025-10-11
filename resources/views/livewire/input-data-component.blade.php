@@ -88,9 +88,11 @@
                             maxlength="10"
                         >
                     </div>
+                    <div class="form-hint">務必確認電話可以通話，避免漏接審核結果訊息</div>
                     @error('phone')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
+
                 </div>
 
                 <!-- Occupation Input -->
