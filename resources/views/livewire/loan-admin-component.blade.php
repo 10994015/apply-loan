@@ -585,7 +585,22 @@
                                                 </div>
                                             @endif
                                         </div>
-
+                                        <!-- 新增：公司資訊區塊 -->
+                                        <div class="detail-section">
+                                            <h3><i class="fas fa-building"></i> 公司資訊</h3>
+                                            <div class="detail-item">
+                                                <label>公司名稱:</label>
+                                                <span>{{ $selectedApplication->company_name ?: '未填寫' }}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <label>公司地址:</label>
+                                                <span>{{ $selectedApplication->company_address ?: '未填寫' }}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <label>公司電話:</label>
+                                                <span>{{ $selectedApplication->company_phone ?: '未填寫' }}</span>
+                                            </div>
+                                        </div>
                                         <!-- 緊急聯絡人資料 -->
                                         <div class="detail-section">
                                             <h3><i class="fas fa-users"></i> 緊急聯絡人</h3>
@@ -674,6 +689,66 @@
                                                 </div>
                                             @endif
                                         </div>
+
+                                        <!-- 備註管理區塊 -->
+                                        <div class="detail-section notes-section">
+                                            <div class="notes-header">
+                                                <h3><i class="fas fa-sticky-note"></i> 備註管理</h3>
+                                                <div class="notes-actions">
+                                                    @if($editingNotes)
+                                                        <button wire:click="cancelEditingNotes" class="btn btn-sm btn-outline">
+                                                            <i class="fas fa-times"></i> 取消
+                                                        </button>
+                                                        <button wire:click="saveNotes" class="btn btn-sm btn-success">
+                                                            <i class="fas fa-save"></i> 儲存
+                                                        </button>
+                                                    @else
+                                                        <button wire:click="startEditingNotes" class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-edit"></i> 編輯備註
+                                                        </button>
+                                                        @if($selectedApplication->notes)
+                                                            <button
+                                                                wire:click="clearNotes"
+                                                                onclick="return confirm('確定要清空所有備註嗎？')"
+                                                                class="btn btn-sm btn-danger">
+                                                                <i class="fas fa-trash"></i> 清空
+                                                            </button>
+                                                        @endif
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            <div class="notes-content">
+                                                @if($editingNotes)
+                                                    <!-- 編輯模式 -->
+                                                    <div class="notes-editor">
+                                                        <textarea
+                                                            wire:model="notesContent"
+                                                            class="notes-textarea"
+                                                            placeholder="請輸入備註內容..."
+                                                            rows="10"
+                                                        ></textarea>
+                                                        <div class="notes-hint">
+                                                            <i class="fas fa-info-circle"></i>
+                                                            提示：可以記錄審核意見、聯繫記錄、處理進度等資訊
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <!-- 顯示模式 -->
+                                                    @if($selectedApplication->notes)
+                                                        <div class="notes-display">
+                                                            {!! nl2br(e($selectedApplication->notes)) !!}
+                                                        </div>
+                                                    @else
+                                                        <div class="notes-empty">
+                                                            <i class="fas fa-file-alt"></i>
+                                                            <p>尚未新增任何備註</p>
+                                                        </div>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -854,17 +929,60 @@
                                         @endif
                                     </div>
 
+                                    <!-- 新增：居住地門牌照片 -->
+                                    <div class="document-item">
+                                        <div class="document-header">
+                                            <h4>居住地門牌照片</h4>
+                                            @if($selectedApplication->residence_photo_path)
+                                                <span class="document-status uploaded">
+                                                    <i class="fas fa-check-circle"></i> 已上傳
+                                                </span>
+                                            @else
+                                                <span class="document-status missing">
+                                                    <i class="fas fa-times-circle"></i> 未上傳
+                                                </span>
+                                            @endif
+                                        </div>
+                                        @if($selectedApplication->residence_photo_path)
+                                            @php
+                                                $residencePhotoUrl = $this->getS3FileUrl($selectedApplication->residence_photo_path);
+                                            @endphp
+                                            @if($residencePhotoUrl)
+                                                <div class="document-preview">
+                                                    <img src="{{ $residencePhotoUrl }}"
+                                                        alt="居住地門牌照片"
+                                                        class="document-image"
+                                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                                    <div style="display:none; text-align:center; padding:20px; color:#666;">
+                                                        <i class="fas fa-image"></i><br>
+                                                        圖片載入失敗
+                                                    </div>
+                                                    <div class="document-actions">
+                                                        <a href="{{ $residencePhotoUrl }}" target="_blank" class="btn btn-sm btn-info">
+                                                            <i class="fas fa-external-link-alt"></i> 查看
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div style="text-align:center; padding:20px; color:#666;">
+                                                    <i class="fas fa-exclamation-triangle"></i><br>
+                                                    無法載入圖片
+                                                </div>
+                                            @endif
+                                        @endif
+                                    </div>
+
                                     <!-- 銀行卡/存摺 -->
                                     <div class="document-item">
                                         <div class="document-header">
-                                            <h4>銀行卡/存摺 <span class="optional">(選填)</span></h4>
+                                            <h4>銀行卡/存摺</h4>
                                             @if($selectedApplication->bank_card_path)
                                                 <span class="document-status uploaded">
                                                     <i class="fas fa-check-circle"></i> 已上傳
                                                 </span>
                                             @else
-                                                <span class="document-status optional">
-                                                    <i class="fas fa-minus-circle"></i> 未上傳
+                                                <span class="document-status missing">
+                                                    <i class="fas fa-times-circle"></i> 未上傳
                                                 </span>
                                             @endif
                                         </div>

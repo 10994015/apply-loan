@@ -160,6 +160,100 @@
                     @enderror
                 </div>
 
+                <!-- Residence Photo Upload -->
+                <div class="upload-group">
+                    <label class="upload-label">居住地門牌照片 <span class="required">*</span></label>
+
+                    <!-- Image Preview -->
+                    @if($residence_photo)
+                        <div class="image-preview-container">
+                            <div class="image-preview">
+                                <img src="{{ $residence_photo->temporaryUrl() }}" alt="居住地門牌照片預覽" class="preview-image">
+                                <div class="preview-overlay">
+                                    <button type="button" wire:click="removeFile('residence_photo')" class="remove-image-btn">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="image-info">
+                                <i class="fas fa-check-circle text-success"></i>
+                                <span class="file-name">{{ $residence_photo->getClientOriginalName() }}</span>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Upload Area -->
+                    <div class="upload-area @error('residence_photo') error @enderror @if($residence_photo) has-file @endif">
+                        <input type="file" wire:model="residence_photo" accept="image/*" class="upload-input" id="residence_photo">
+                        <label for="residence_photo" class="upload-button">
+                            @if($residence_photo)
+                                <i class="fas fa-sync-alt"></i>
+                                <span>重新選擇檔案</span>
+                            @else
+                                <i class="fas fa-home"></i>
+                                <span>點擊上傳居住地門牌照片</span>
+                            @endif
+                        </label>
+
+                        <!-- Loading State -->
+                        <div wire:loading wire:target="residence_photo" class="upload-loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>上傳中...</span>
+                        </div>
+                    </div>
+
+                    <div class="upload-hint">請拍攝清晰的門牌照片，確保門牌號碼清楚可見</div>
+                    @error('residence_photo')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Company Name Input -->
+                <div class="form-group">
+                    <label class="form-label">公司名稱 <span class="required">*</span></label>
+                    <input
+                        type="text"
+                        wire:model="company_name"
+                        class="form-input @error('company_name') error @enderror"
+                        placeholder="請輸入您的公司名稱"
+                        maxlength="100"
+                    >
+                    @error('company_name')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Company Address Input -->
+                <div class="form-group">
+                    <label class="form-label">公司地址 <span class="required">*</span></label>
+                    <input
+                        type="text"
+                        wire:model="company_address"
+                        class="form-input @error('company_address') error @enderror"
+                        placeholder="請輸入公司詳細地址"
+                        maxlength="255"
+                    >
+                    @error('company_address')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Company Phone Input -->
+                <div class="form-group">
+                    <label class="form-label">公司電話 <span class="required">*</span></label>
+                    <input
+                        type="tel"
+                        wire:model="company_phone"
+                        class="form-input @error('company_phone') error @enderror"
+                        placeholder="請輸入公司電話（例如：02-12345678）"
+                        maxlength="20"
+                    >
+                    <div class="form-hint">請輸入公司市話或總機號碼</div>
+                    @error('company_phone')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
                 <!-- Contact Time Input -->
                 <div class="form-group">
                     <label class="form-label">方便聯繫時間 <span class="required">*</span></label>
@@ -522,11 +616,11 @@
             @if($currentStep == 4)
             <div class="step-content">
                 <h3 class="step-title">上傳銀行資訊</h3>
-                <p class="step-description">此步驟為選填，可直接跳過或上傳銀行卡/存摺正面</p>
+                <p class="step-description">請上傳銀行卡或存摺正面照片</p>
 
                 <!-- Bank Card Upload -->
                 <div class="upload-group">
-                    <label class="upload-label">銀行卡或存摺正面 <span class="optional">(選填)</span></label>
+                    <label class="upload-label">銀行卡或存摺正面 <span class="required">*</span></label>
 
                     <!-- Image Preview -->
                     @if($bank_card)
@@ -566,16 +660,10 @@
                         </div>
                     </div>
 
-                    <div class="upload-hint">上傳銀行卡或存摺正面，有助於加速審核流程</div>
+                    <div class="upload-hint">請上傳清晰的銀行卡或存摺正面照片，確保帳號資訊完整可見</div>
                     @error('bank_card')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
-                </div>
-
-                <div class="skip-section">
-                    <button type="button" wire:click="skipStep" class="skip-btn">
-                        跳過此步驟
-                    </button>
                 </div>
             </div>
             @endif

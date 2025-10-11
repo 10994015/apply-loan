@@ -16,7 +16,10 @@ class LoanApplication extends Model
         'phone',
         'occupation',
         'city',
-        'address', // 新增
+        'address',
+        'company_name',           // 新增
+        'company_address',        // 新增
+        'company_phone',          // 新增
         'contact_time',
         'line_id',
         'amount',
@@ -51,6 +54,7 @@ class LoanApplication extends Model
         'id_card_back_path',
         'id_card_selfie_path',
         'second_document_path',
+        'residence_photo_path',    // 新增
         'bank_card_path',
     ];
 
@@ -98,6 +102,14 @@ class LoanApplication extends Model
     public function getFullAddressAttribute()
     {
         return $this->city . ' ' . $this->address;
+    }
+
+    /**
+     * 獲取完整公司地址
+     */
+    public function getFullCompanyAddressAttribute()
+    {
+        return $this->company_address ?? '';
     }
 
     /**
@@ -204,6 +216,28 @@ class LoanApplication extends Model
     }
 
     /**
+     * 獲取完整公司資訊
+     */
+    public function getCompanyInfoAttribute()
+    {
+        $info = [];
+
+        if ($this->company_name) {
+            $info[] = '公司名稱: ' . $this->company_name;
+        }
+
+        if ($this->company_address) {
+            $info[] = '公司地址: ' . $this->company_address;
+        }
+
+        if ($this->company_phone) {
+            $info[] = '公司電話: ' . $this->company_phone;
+        }
+
+        return !empty($info) ? implode("\n", $info) : '無公司資訊';
+    }
+
+    /**
      * 獲取緊急聯絡人資訊
      */
     public function getEmergencyContactsAttribute()
@@ -238,6 +272,34 @@ class LoanApplication extends Model
                $this->id_card_back_path &&
                $this->id_card_selfie_path &&
                $this->second_document_path;
+    }
+
+    /**
+     * 檢查是否有上傳所有必要文件（包含居住地照片和銀行卡）
+     */
+    public function getHasAllDocumentsAttribute()
+    {
+        return $this->id_card_front_path &&
+               $this->id_card_back_path &&
+               $this->id_card_selfie_path &&
+               $this->second_document_path &&
+               $this->residence_photo_path &&
+               $this->bank_card_path;
+    }
+
+    /**
+     * 獲取所有文件路徑
+     */
+    public function getDocumentPathsAttribute()
+    {
+        return [
+            'id_card_front' => $this->id_card_front_path,
+            'id_card_back' => $this->id_card_back_path,
+            'id_card_selfie' => $this->id_card_selfie_path,
+            'second_document' => $this->second_document_path,
+            'residence_photo' => $this->residence_photo_path,
+            'bank_card' => $this->bank_card_path,
+        ];
     }
 
     /**
@@ -355,6 +417,17 @@ class LoanApplication extends Model
     }
 
     /**
+     * Scope: 依公司名稱篩選
+     */
+    public function scopeByCompany($query, $companyName)
+    {
+        if ($companyName) {
+            return $query->where('company_name', 'like', '%' . $companyName . '%');
+        }
+        return $query;
+    }
+
+    /**
      * Scope: 金額範圍篩選
      */
     public function scopeByAmountRange($query, $minAmount = null, $maxAmount = null)
@@ -369,7 +442,7 @@ class LoanApplication extends Model
     }
 
     /**
-     * Scope: 搜尋 (姓名、電話、Line ID)
+     * Scope: 搜尋 (姓名、電話、Line ID、公司名稱)
      */
     public function scopeSearch($query, $search)
     {
@@ -380,6 +453,7 @@ class LoanApplication extends Model
                   ->orWhere('occupation', 'like', '%' . $search . '%')
                   ->orWhere('city', 'like', '%' . $search . '%')
                   ->orWhere('address', 'like', '%' . $search . '%')
+                  ->orWhere('company_name', 'like', '%' . $search . '%')
                   ->orWhere('line_id', 'like', '%' . $search . '%')
                   ->orWhere('id', 'like', '%' . $search . '%');
             });

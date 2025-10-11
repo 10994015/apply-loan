@@ -32,6 +32,10 @@ class LoanAdminComponent extends Component
     public $selectedApplication = null;
     public $showingDocuments = false;
 
+    // 備註編輯
+    public $editingNotes = false;
+    public $notesContent = '';
+
     // 批量操作
     public $selectedApplications = [];
     public $selectAll = false;
@@ -147,6 +151,7 @@ class LoanAdminComponent extends Component
             $application->id_card_back_path,
             $application->id_card_selfie_path,
             $application->second_document_path,
+            $application->residence_photo_path,
             $application->bank_card_path,
         ];
 
@@ -209,7 +214,10 @@ class LoanAdminComponent extends Component
         $this->selectedApplication = LoanApplication::find($applicationId);
         $this->showingDetail = true;
         $this->showingDocuments = false;
+        $this->editingNotes = false;
+        $this->notesContent = $this->selectedApplication->notes ?? '';
     }
+
 
     public function closeDetail()
     {
@@ -221,24 +229,6 @@ class LoanAdminComponent extends Component
     public function toggleDocuments()
     {
         $this->showingDocuments = !$this->showingDocuments;
-    }
-
-    public function addNote($applicationId, $note)
-    {
-        $application = LoanApplication::find($applicationId);
-        if ($application) {
-            $currentNotes = $application->notes ? $application->notes . "\n" : '';
-            $timestamp = Carbon::now()->format('Y-m-d H:i:s');
-            $newNote = "[{$timestamp}] {$note}";
-
-            $application->update([
-                'notes' => $currentNotes . $newNote
-            ]);
-
-            if ($this->selectedApplication && $this->selectedApplication->id === $applicationId) {
-                $this->selectedApplication = $application->fresh();
-            }
-        }
     }
 
     // 批量操作
@@ -338,14 +328,15 @@ class LoanAdminComponent extends Component
         if ($this->search) {
             $query->where(function($q) {
                 $q->where('phone', 'like', '%' . $this->search . '%')
-                  ->orWhere('id', 'like', '%' . $this->search . '%')
-                  ->orWhere('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('occupation', 'like', '%' . $this->search . '%')
-                  ->orWhere('city', 'like', '%' . $this->search . '%')
-                  ->orWhere('address', 'like', '%' . $this->search . '%')
-                  ->orWhere('line_id', 'like', '%' . $this->search . '%')
-                  ->orWhere('emergency_contact_1_name', 'like', '%' . $this->search . '%')
-                  ->orWhere('emergency_contact_2_name', 'like', '%' . $this->search . '%');
+                ->orWhere('id', 'like', '%' . $this->search . '%')
+                ->orWhere('name', 'like', '%' . $this->search . '%')
+                ->orWhere('occupation', 'like', '%' . $this->search . '%')
+                ->orWhere('city', 'like', '%' . $this->search . '%')
+                ->orWhere('address', 'like', '%' . $this->search . '%')
+                ->orWhere('company_name', 'like', '%' . $this->search . '%')  // 新增
+                ->orWhere('line_id', 'like', '%' . $this->search . '%')
+                ->orWhere('emergency_contact_1_name', 'like', '%' . $this->search . '%')
+                ->orWhere('emergency_contact_2_name', 'like', '%' . $this->search . '%');
             });
         }
 
@@ -421,7 +412,7 @@ class LoanAdminComponent extends Component
                 break;
             case 'this_month':
                 $query->whereMonth('applied_at', Carbon::now()->month)
-                      ->whereYear('applied_at', Carbon::now()->year);
+                    ->whereYear('applied_at', Carbon::now()->year);
                 break;
         }
 
@@ -432,9 +423,10 @@ class LoanAdminComponent extends Component
         // 準備 Excel 資料
         $excelData = [];
 
-        // 標題列
+        // 標題列 - 新增公司資訊欄位
         $excelData[] = [
             '申請編號', '姓名', '手機號碼', '職業', '居住縣市', '詳細地址',
+            '公司名稱', '公司地址', '公司電話',  // 新增
             '方便聯繫時間', 'Line ID', '申請金額', '狀態', '當前步驟',
             '緊急聯絡人1姓名', '緊急聯絡人1電話', '緊急聯絡人1關係',
             '緊急聯絡人2姓名', '緊急聯絡人2電話', '緊急聯絡人2關係',
@@ -442,7 +434,7 @@ class LoanAdminComponent extends Component
             '步驟4完成時間', '步驟5完成時間', '備註'
         ];
 
-        // 資料列
+        // 資料列 - 新增公司資訊資料
         foreach ($applications as $app) {
             $excelData[] = [
                 str_pad($app->id, 6, '0', STR_PAD_LEFT),
@@ -451,6 +443,9 @@ class LoanAdminComponent extends Component
                 $app->occupation,
                 $app->city,
                 $app->address,
+                $app->company_name ?: '',        // 新增
+                $app->company_address ?: '',     // 新增
+                $app->company_phone ?: '',       // 新增
                 $app->contact_time,
                 $app->line_id ?: '',
                 $app->amount,
@@ -613,7 +608,123 @@ class LoanAdminComponent extends Component
             return null;
         }
     }
+    /**
+     * 開始編輯備註
+     */
+    public function startEditingNotes()
+    {
+        $this->editingNotes = true;
+        $this->notesContent = $this->selectedApplication->notes ?? '';
+    }
 
+    /**
+     * 取消編輯備註
+     */
+    public function cancelEditingNotes()
+    {
+        $this->editingNotes = false;
+        $this->notesContent = $this->selectedApplication->notes ?? '';
+    }
+
+    /**
+     * 儲存備註
+     */
+    public function saveNotes()
+    {
+        if (!$this->selectedApplication) {
+            return;
+        }
+
+        try {
+            $this->selectedApplication->update([
+                'notes' => $this->notesContent
+            ]);
+
+            // 重新載入申請資料
+            $this->selectedApplication = $this->selectedApplication->fresh();
+
+            $this->editingNotes = false;
+
+            session()->flash('message', '備註已儲存');
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to save notes', [
+                'application_id' => $this->selectedApplication->id,
+                'error' => $e->getMessage()
+            ]);
+
+            session()->flash('error', '儲存備註失敗，請重試');
+        }
+    }
+
+    /**
+     * 新增備註（追加模式，保留舊備註）
+     */
+    public function addNote($note)
+    {
+        if (!$this->selectedApplication || empty(trim($note))) {
+            return;
+        }
+
+        try {
+            $currentNotes = $this->selectedApplication->notes ?? '';
+            $timestamp = Carbon::now()->format('Y-m-d H:i:s');
+            $newNote = "[{$timestamp}] {$note}";
+
+            $updatedNotes = $currentNotes
+                ? $currentNotes . "\n" . $newNote
+                : $newNote;
+
+            $this->selectedApplication->update([
+                'notes' => $updatedNotes
+            ]);
+
+            // 重新載入申請資料
+            $this->selectedApplication = $this->selectedApplication->fresh();
+            $this->notesContent = $this->selectedApplication->notes;
+
+            session()->flash('message', '備註已新增');
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to add note', [
+                'application_id' => $this->selectedApplication->id,
+                'error' => $e->getMessage()
+            ]);
+
+            session()->flash('error', '新增備註失敗，請重試');
+        }
+    }
+
+    /**
+     * 清空備註
+     */
+    public function clearNotes()
+    {
+        if (!$this->selectedApplication) {
+            return;
+        }
+
+        try {
+            $this->selectedApplication->update([
+                'notes' => null
+            ]);
+
+            // 重新載入申請資料
+            $this->selectedApplication = $this->selectedApplication->fresh();
+            $this->notesContent = '';
+            $this->editingNotes = false;
+
+            session()->flash('message', '備註已清空');
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to clear notes', [
+                'application_id' => $this->selectedApplication->id,
+                'error' => $e->getMessage()
+            ]);
+
+            session()->flash('error', '清空備註失敗，請重試');
+        }
+    }
 
     public function render()
     {

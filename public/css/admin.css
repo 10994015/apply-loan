@@ -1324,3 +1324,186 @@
         .pagination-wrapper [class*="rtl:flex-row-reverse"] {
             flex-direction: row !important;
         }
+/* 備註區塊樣式 */
+.notes-section {
+    grid-column: 1 / -1; /* 佔滿整行 */
+    margin-top: 20px;
+}
+
+.notes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.notes-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notes-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.notes-content {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 150px;
+}
+
+.notes-editor {
+    position: relative;
+}
+
+.notes-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 200px;
+    background: white;
+    transition: border-color 0.3s ease;
+}
+
+.notes-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.notes-hint {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.notes-display {
+    background: white;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    min-height: 150px;
+    line-height: 1.8;
+    color: #495057;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.notes-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #adb5bd;
+}
+
+.notes-empty i {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.notes-empty p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* 按鈕樣式增強 */
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 4px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-outline {
+    background: white;
+    color: #6c757d;
+    border: 1px solid #ddd;
+}
+
+.btn-outline:hover {
+    background: #f8f9fa;
+    border-color: #6c757d;
+    color: #495057;
+}
+
+/* Loading 狀態 */
+[wire\:loading] .notes-textarea,
+[wire\:loading] .notes-display {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .notes-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .notes-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .notes-textarea {
+        font-size: 16px; /* 防止 iOS 自動縮放 */
+    }
+}

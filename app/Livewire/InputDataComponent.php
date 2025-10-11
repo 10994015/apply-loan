@@ -5,7 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\LoanApplication;
-use App\Models\LoanSetting; // 添加這個 import
+use App\Models\LoanSetting;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Url;
@@ -37,6 +37,18 @@ class InputDataComponent extends Component
 
     #[Validate('required|string|max:200')]
     public $address = '';
+
+    #[Validate('required|image|max:10240')]
+    public $residence_photo = null;
+
+    #[Validate('required|string|max:100')]
+    public $company_name = '';
+
+    #[Validate('required|string|max:255')]
+    public $company_address = '';
+
+    #[Validate('required|string|max:20')]
+    public $company_phone = '';
 
     #[Validate('required|string|max:100')]
     public $contact_time = '';
@@ -81,8 +93,8 @@ class InputDataComponent extends Component
     #[Validate('required|image|max:10240')]
     public $second_document = null;
 
-    // 步驟4：銀行資訊（選填）
-    #[Validate('nullable|image|max:10240')]
+    // 步驟4：銀行資訊（必填）
+    #[Validate('required|image|max:10240')]
     public $bank_card = null;
 
     // 申請ID（只有在最後才產生）
@@ -94,7 +106,6 @@ class InputDataComponent extends Component
         $minAmount = LoanSetting::getValue('loan_min_amount', 7000);
         $maxAmount = LoanSetting::getValue('loan_max_amount', 100000);
         $defaultAmount = LoanSetting::getValue('loan_default_amount', 20000);
-
 
         $this->amount = $this->amountUrl;
         // 驗證金額在允許範圍內
@@ -123,7 +134,6 @@ class InputDataComponent extends Component
         ];
     }
 
-
     protected function messages()
     {
         $limits = $this->getLoanAmountLimits();
@@ -146,6 +156,19 @@ class InputDataComponent extends Component
             'address.required' => '請輸入詳細地址',
             'address.max' => '地址不能超過200個字元',
 
+            'residence_photo.required' => '請上傳居住地門牌照片',
+            'residence_photo.image' => '居住地門牌照片必須是圖片檔案',
+            'residence_photo.max' => '居住地門牌照片不能超過10MB',
+
+            'company_name.required' => '請輸入公司名稱',
+            'company_name.max' => '公司名稱不能超過100個字元',
+
+            'company_address.required' => '請輸入公司地址',
+            'company_address.max' => '公司地址不能超過255個字元',
+
+            'company_phone.required' => '請輸入公司電話',
+            'company_phone.max' => '公司電話不能超過20個字元',
+
             'contact_time.required' => '請選擇方便聯繫時間',
             'contact_time.max' => '聯繫時間不能超過100個字元',
 
@@ -156,7 +179,7 @@ class InputDataComponent extends Component
             'amount.min' => '貸款金額最少為 $' . number_format($limits['min']),
             'amount.max' => '貸款金額最多為 $' . number_format($limits['max']),
 
-            // 其他驗證訊息保持不變...
+            // 緊急聯絡人驗證訊息
             'emergency_contact_1_name.required' => '請輸入第一位緊急聯絡人姓名',
             'emergency_contact_1_name.regex' => '姓名只能包含中文、英文和空格',
             'emergency_contact_1_phone.required' => '請輸入第一位緊急聯絡人手機號碼',
@@ -189,11 +212,11 @@ class InputDataComponent extends Component
             'second_document.max' => '第二證件圖片不能超過10MB',
 
             // 銀行卡驗證訊息
+            'bank_card.required' => '請上傳銀行卡或存摺正面',
             'bank_card.image' => '銀行卡圖片必須是圖片檔案',
             'bank_card.max' => '銀行卡圖片不能超過10MB',
         ];
     }
-
 
     /**
      * 移除檔案
@@ -257,6 +280,7 @@ class InputDataComponent extends Component
                     break;
 
                 case 4:
+                    $this->validateStep4();
                     $this->step4Completed = true;
                     $this->currentStep = 5;
                     $this->completeApplication(); // 在這裡才真正寫入資料庫和上傳到S3
@@ -295,17 +319,12 @@ class InputDataComponent extends Component
     }
 
     /**
-     * 跳過步驟（僅限步驟4）
+     * 跳過步驟（已停用，因為銀行資訊改為必填）
      */
     public function skipStep()
     {
-        if ($this->currentStep == 4) {
-            $this->step4Completed = true;
-            $this->currentStep = 5;
-            $this->completeApplication(); // 在這裡才真正寫入資料庫和上傳到S3
-            $this->saveProgressToSession();
-            $this->dispatch('step-changed', step: $this->currentStep);
-        }
+        // 銀行資訊已改為必填，此方法不再執行任何操作
+        return;
     }
 
     /**
@@ -321,12 +340,15 @@ class InputDataComponent extends Component
             'occupation' => 'required|string|max:100',
             'city' => 'required|string|max:50',
             'address' => 'required|string|max:200',
+            'residence_photo' => 'required|image|max:10240',
+            'company_name' => 'required|string|max:100',
+            'company_address' => 'required|string|max:255',
+            'company_phone' => 'required|string|max:20',
             'contact_time' => 'required|string|max:100',
             'line_id' => 'nullable|string|max:50',
             'amount' => "required|numeric|min:{$limits['min']}|max:{$limits['max']}",
         ]);
     }
-
 
     /**
      * 驗證步驟2
@@ -348,12 +370,11 @@ class InputDataComponent extends Component
             throw new \Exception('兩位緊急聯絡人不能是同一人');
         }
 
-        // 檢查緊急聯絡人手機不能和申請人相同
-        if ($this->emergency_contact_1_phone == $this->phone || $this->emergency_contact_2_phone == $this->phone) {
-            $this->addError('emergency_contact_2_phone', '建議緊急聯絡人使用不同的手機號碼');
-            throw new \Exception('建議緊急聯絡人使用不同的手機號碼');
-        }
-
+        // // 檢查緊急聯絡人手機不能和申請人相同
+        // if ($this->emergency_contact_1_phone == $this->phone || $this->emergency_contact_2_phone == $this->phone) {
+        //     $this->addError('emergency_contact_2_phone', '建議緊急聯絡人使用不同的手機號碼');
+        //     throw new \Exception('建議緊急聯絡人使用不同的手機號碼');
+        // }
     }
 
     /**
@@ -366,6 +387,16 @@ class InputDataComponent extends Component
             'id_card_back' => 'required|image|max:10240',
             'id_card_selfie' => 'required|image|max:10240',
             'second_document' => 'required|image|max:10240',
+        ]);
+    }
+
+    /**
+     * 驗證步驟4
+     */
+    private function validateStep4()
+    {
+        $this->validate([
+            'bank_card' => 'required|image|max:10240',
         ]);
     }
 
@@ -392,6 +423,9 @@ class InputDataComponent extends Component
                 'occupation' => trim($this->occupation),
                 'city' => $this->city,
                 'address' => trim($this->address),
+                'company_name' => trim($this->company_name),
+                'company_address' => trim($this->company_address),
+                'company_phone' => trim($this->company_phone),
                 'contact_time' => $this->contact_time,
                 'line_id' => $this->line_id ? trim($this->line_id) : null,
                 'amount' => $this->amount,
@@ -425,6 +459,7 @@ class InputDataComponent extends Component
                 'id_card_back_path' => null,
                 'id_card_selfie_path' => null,
                 'second_document_path' => null,
+                'residence_photo_path' => null,
                 'bank_card_path' => null,
             ]);
 
@@ -444,6 +479,7 @@ class InputDataComponent extends Component
                 'id_card_back_path' => $filePaths['id_card_back'] ?? null,
                 'id_card_selfie_path' => $filePaths['id_card_selfie'] ?? null,
                 'second_document_path' => $filePaths['second_document'] ?? null,
+                'residence_photo_path' => $filePaths['residence_photo'] ?? null,
                 'bank_card_path' => $filePaths['bank_card'] ?? null,
             ]);
 
@@ -467,6 +503,7 @@ class InputDataComponent extends Component
                     'id_card_back' => !empty($filePaths['id_card_back']),
                     'id_card_selfie' => !empty($filePaths['id_card_selfie']),
                     'second_document' => !empty($filePaths['second_document']),
+                    'residence_photo' => !empty($filePaths['residence_photo']),
                     'bank_card' => !empty($filePaths['bank_card']),
                 ]
             ]);
@@ -505,6 +542,7 @@ class InputDataComponent extends Component
                 'id_card_back' => $this->id_card_back,
                 'id_card_selfie' => $this->id_card_selfie,
                 'second_document' => $this->second_document,
+                'residence_photo' => $this->residence_photo,
                 'bank_card' => $this->bank_card,
             ];
 
@@ -592,14 +630,15 @@ class InputDataComponent extends Component
     private function resetComponentPropertiesForNewApplication()
     {
         // 重置基本資料
-        // $this->name = '';
         $this->phone = '';
         $this->occupation = '';
         $this->city = '';
         $this->address = '';
+        $this->company_name = '';
+        $this->company_address = '';
+        $this->company_phone = '';
         $this->contact_time = '';
         $this->line_id = '';
-        // $this->amount = LoanSetting::getValue('loan_default_amount', 20000); // 使用動態預設值
 
         // 重置緊急聯絡人
         $this->emergency_contact_1_name = '';
@@ -614,6 +653,7 @@ class InputDataComponent extends Component
         $this->id_card_back = null;
         $this->id_card_selfie = null;
         $this->second_document = null;
+        $this->residence_photo = null;
         $this->bank_card = null;
 
         // 重置步驟狀態（除了當前步驟和完成狀態，用於顯示成功頁面）
@@ -621,11 +661,7 @@ class InputDataComponent extends Component
         $this->step2Completed = false;
         $this->step3Completed = false;
         $this->step4Completed = false;
-
-        // 保留 currentStep = 5 和 step5Completed = true 以顯示成功頁面
-        // 保留 applicationId 以顯示申請編號
     }
-
 
     /**
      * 觸發申請提交後的業務邏輯
@@ -684,21 +720,19 @@ class InputDataComponent extends Component
             $this->id_card_back = null;
             $this->id_card_selfie = null;
             $this->second_document = null;
+            $this->residence_photo = null;
             $this->bank_card = null;
 
-            // 4. 重置金額為從資料庫取得的預設值
-            // $this->amount = LoanSetting::getValue('loan_default_amount', 20000);
-
-            // 5. 清除驗證錯誤
+            // 4. 清除驗證錯誤
             $this->resetErrorBag();
 
-            // 6. 清除 session 資料
+            // 5. 清除 session 資料
             session()->forget([
                 'loan_application_progress',
                 'loan_amount'
             ]);
 
-            // 7. 觸發前端事件
+            // 6. 觸發前端事件
             $this->dispatch('new-application-started');
             $this->dispatch('step-changed', step: 1);
 
@@ -714,7 +748,6 @@ class InputDataComponent extends Component
         }
     }
 
-
     /**
      * 保存目前進度到 session
      */
@@ -728,6 +761,9 @@ class InputDataComponent extends Component
                 'occupation' => $this->occupation,
                 'city' => $this->city,
                 'address' => $this->address,
+                'company_name' => $this->company_name,
+                'company_address' => $this->company_address,
+                'company_phone' => $this->company_phone,
                 'contact_time' => $this->contact_time,
                 'line_id' => $this->line_id,
                 'amount' => $this->amount,
@@ -769,6 +805,9 @@ class InputDataComponent extends Component
                 $this->occupation = $progress['basic_data']['occupation'] ?? '';
                 $this->city = $progress['basic_data']['city'] ?? '';
                 $this->address = $progress['basic_data']['address'] ?? '';
+                $this->company_name = $progress['basic_data']['company_name'] ?? '';
+                $this->company_address = $progress['basic_data']['company_address'] ?? '';
+                $this->company_phone = $progress['basic_data']['company_phone'] ?? '';
                 $this->contact_time = $progress['basic_data']['contact_time'] ?? '';
                 $this->line_id = $progress['basic_data']['line_id'] ?? '';
                 $this->amount = $progress['basic_data']['amount'] ?? 20000;
@@ -869,7 +908,8 @@ class InputDataComponent extends Component
         }
 
         // 檔案上傳完成時的處理
-        if (in_array($propertyName, ['id_card_front', 'id_card_back', 'id_card_selfie', 'second_document', 'bank_card'])) {
+        if (in_array($propertyName, ['id_card_front', 'id_card_back', 'id_card_selfie',
+                                      'second_document', 'residence_photo', 'bank_card'])) {
             if ($this->$propertyName) {
                 $this->dispatch('file-selected', property: $propertyName);
             }
@@ -884,7 +924,10 @@ class InputDataComponent extends Component
      */
     private function shouldValidateProperty($propertyName)
     {
-        $step1Properties = ['name', 'phone', 'occupation', 'city', 'address', 'contact_time', 'line_id', 'amount'];
+        $step1Properties = ['name', 'phone', 'occupation', 'city', 'address',
+                            'residence_photo',
+                            'company_name', 'company_address', 'company_phone',
+                            'contact_time', 'line_id', 'amount'];
         $step2Properties = ['emergency_contact_1_name', 'emergency_contact_1_phone', 'emergency_contact_1_relationship',
                            'emergency_contact_2_name', 'emergency_contact_2_phone', 'emergency_contact_2_relationship'];
         $step3Properties = ['id_card_front', 'id_card_back', 'id_card_selfie', 'second_document'];
@@ -936,10 +979,13 @@ class InputDataComponent extends Component
      */
     public function resetForm()
     {
-        $this->reset(['name', 'phone', 'occupation', 'city', 'address', 'contact_time', 'line_id',
+        $this->reset(['name', 'phone', 'occupation', 'city', 'address',
+                     'company_name', 'company_address', 'company_phone',
+                     'contact_time', 'line_id',
                      'emergency_contact_1_name', 'emergency_contact_1_phone', 'emergency_contact_1_relationship',
                      'emergency_contact_2_name', 'emergency_contact_2_phone', 'emergency_contact_2_relationship',
-                     'id_card_front', 'id_card_back', 'id_card_selfie', 'second_document', 'bank_card']);
+                     'id_card_front', 'id_card_back', 'id_card_selfie', 'second_document',
+                     'residence_photo', 'bank_card']);
 
         $this->currentStep = 1;
         $this->step1Completed = false;
@@ -993,6 +1039,10 @@ class InputDataComponent extends Component
                        !empty($this->occupation) &&
                        !empty($this->city) &&
                        !empty($this->address) &&
+                       $this->residence_photo !== null &&
+                       !empty($this->company_name) &&
+                       !empty($this->company_address) &&
+                       !empty($this->company_phone) &&
                        !empty($this->contact_time);
 
             case 2:
@@ -1010,7 +1060,7 @@ class InputDataComponent extends Component
                        $this->second_document;
 
             case 4:
-                return true; // 第4步是選填的
+                return $this->bank_card !== null;
 
             default:
                 return false;
@@ -1046,7 +1096,7 @@ class InputDataComponent extends Component
             1 => '請填寫您的基本個人資料',
             2 => '請填寫兩位緊急聯絡人，關係限父母或兄弟姊妹',
             3 => '請上傳清晰的證件照片，確保資訊完整可見',
-            4 => '此步驟為選填，可直接跳過或上傳銀行卡/存摺正面',
+            4 => '請上傳銀行卡或存摺正面照片',
             5 => '恭喜您完成申請！'
         ];
 
@@ -1101,6 +1151,9 @@ class InputDataComponent extends Component
                 'occupation' => $this->occupation,
                 'city' => $this->city,
                 'address' => $this->address,
+                'company_name' => $this->company_name,
+                'company_address' => $this->company_address,
+                'company_phone' => $this->company_phone,
                 'contact_time' => $this->contact_time,
                 'line_id' => $this->line_id,
                 'amount' => $this->amount,
@@ -1122,6 +1175,7 @@ class InputDataComponent extends Component
                 'id_card_back' => !empty($this->id_card_back),
                 'id_card_selfie' => !empty($this->id_card_selfie),
                 'second_document' => !empty($this->second_document),
+                'residence_photo' => !empty($this->residence_photo),
                 'bank_card' => !empty($this->bank_card),
             ]
         ];
@@ -1138,7 +1192,7 @@ class InputDataComponent extends Component
             'stepTitle' => $this->getStepTitle(),
             'stepDescription' => $this->getStepDescription(),
             'applicationSummary' => $this->currentStep >= 5 ? $this->getApplicationSummary() : null,
-            'amountLimits' => $this->getLoanAmountLimits(), // 添加這一行
+            'amountLimits' => $this->getLoanAmountLimits(),
         ])->layout('layouts.app', ['title' => '貸款申請 - ' . $this->getStepTitle()]);
     }
 }
