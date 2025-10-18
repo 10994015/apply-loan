@@ -88,7 +88,7 @@
                             maxlength="10"
                         >
                     </div>
-                    <div class="form-hint">務必確認電話可以通話，避免漏接審核結果訊息</div>
+                    <div class="form-hint alert">務必確認電話可以通話，避免漏接審核結果訊息</div>
                     @error('phone')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
@@ -1289,10 +1289,11 @@
 
 .success-message p {
     margin-bottom: 8px;
+    color:#f34835;
 }
 
 .success-message a {
-    color: #667eea;
+    color: #667eea !important;
     text-decoration: none;
     font-weight: 500;
 }
@@ -1522,8 +1523,12 @@
     color: #6c757d;
     margin-top: 5px;
     line-height: 1.4;
-}
 
+}
+.form-hint.alert{
+    color: #f34835;
+    font-weight: 800;
+}
 /* Enhanced form validation states */
 .form-input.is-valid {
     border-color: #28a745;
